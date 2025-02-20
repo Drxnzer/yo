@@ -3,16 +3,22 @@ import random
 import asyncio
 import logging
 
-# Setup logging for console output
+# Setup logging for console output with colors
 logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+# ANSI color codes
+GREEN = "\033[92m"
+BLUE = "\033[94m"
+PINK = "\033[95m"
+RESET = "\033[0m"
 
 # Load tokens from tokens.txt
 with open("tokens.txt", "r") as f:
     TOKENS = [line.strip() for line in f if line.strip()]
 
 # Your target server and channel IDs
-GUILD_ID = 123456789012345678  # Replace with your server ID
-CHANNEL_ID = 123456789012345678  # Replace with your channel ID
+GUILD_ID = 1106443900127805470  # Replace with your server ID
+CHANNEL_ID = 1340673021530345502  # Replace with your channel ID
 
 # Messages to send
 MESSAGES = [
@@ -27,33 +33,32 @@ MESSAGES = [
 
 class ChatBot(discord.Client):
     def __init__(self, token):
-        super().__init__()
+        intents = discord.Intents.default()
+        intents.messages = True
+        super().__init__(intents=intents)
         self.token = token
 
     async def on_ready(self):
-        logging.info(f"\033[92mSuccess -=> logged in {self.token[:5]}...")  # Green color output
-        await self.start_chat()
-
-    async def on_message(self, message):
-        if message.author.bot:
-            return  # Ignore bot messages
+        logging.info(f"{GREEN}Success -=> logged in {self.token[:5]}...{RESET}")  # Green color output
         
-        if message.channel.id == CHANNEL_ID:
-            response = random.choice(MESSAGES)
-            await message.channel.send(response)
-
-    async def start_chat(self):
-        await asyncio.sleep(random.randint(5, 15))  # Random delay to look more natural
+        # Fetch channel and server info
+        guild = self.get_guild(GUILD_ID)
         channel = self.get_channel(CHANNEL_ID)
+
+        if guild and channel:
+            logging.info(f"{BLUE}Fetched channel and server data!{RESET}")  # Blue message
+
+        await self.start_chat(channel)
+
+    async def start_chat(self, channel):
         if channel:
+            logging.info(f"{PINK}Chatting Started!{RESET}")  # Pink message
             while True:
+                await asyncio.sleep(random.uniform(1, 2))  # Random delay between 1-2 seconds
                 await channel.send(random.choice(MESSAGES))
-                await asyncio.sleep(random.randint(20, 60))  # Chat interval
 
 # Start multiple bots
 bots = []
 for token in TOKENS:
     bot = ChatBot(token)
-    bots.append(bot)
-    bot.run(token, bot=False)  # `bot=False` for self-bots
-        
+    bot.run(token)  # Self-bot mode enabled
