@@ -17,8 +17,8 @@ with open("tokens.txt", "r") as f:
     TOKENS = [line.strip() for line in f if line.strip()]
 
 # Your target server and channel IDs
-GUILD_ID = 1106443900127805470  # Replace with your server ID
-CHANNEL_ID = 1340673021530345502  # Replace with your channel ID
+GUILD_ID = 1342172928871239853  # Replace with your server ID
+CHANNEL_ID = 1342172929542197341  # Replace with your channel ID
 
 # Messages to send
 MESSAGES = [
@@ -29,6 +29,10 @@ MESSAGES = [
     "Mujhe pucho kuch!",
     "Aaj ka din kaisa tha?",
     "Bas time pass ho raha hai",
+    "Sheeessshhhhh",
+    "wdym? lmao",
+    "hahahaha",
+    "bro my asss just got broken out of the helll!!",
 ]
 
 class ChatBot(discord.Client):
@@ -57,8 +61,14 @@ class ChatBot(discord.Client):
                 await asyncio.sleep(random.uniform(1, 2))  # Random delay between 1-2 seconds
                 await channel.send(random.choice(MESSAGES))
 
-# Start multiple bots
-bots = []
-for token in TOKENS:
-    bot = ChatBot(token)
-    bot.run(token)  # Self-bot mode enabled
+# Function to run multiple bots asynchronously
+async def start_all_bots():
+    tasks = []
+    for token in TOKENS:
+        bot = ChatBot(token)
+        tasks.append(asyncio.create_task(bot.start(token, bot=False)))  # Run all bots concurrently
+
+    await asyncio.gather(*tasks)  # Wait for all bots to run
+
+# Run the script
+asyncio.run(start_all_bots())
