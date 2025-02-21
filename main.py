@@ -1,12 +1,16 @@
 import discord
+import openai
 import random
 import asyncio
-import openai
 import logging
-from colorama import Fore, Style
+from colorama import Fore, init
 
-# OpenAI API Key (Replace with your secure key)
-openai.api_key = "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"
+# Initialize colorama for colored console output
+init(autoreset=True)
+
+# OpenAI API Key (Replace with your actual key)
+OPENAI_API_KEY = "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"  # Replace with your OpenAI API key
+openai.api_key = OPENAI_API_KEY
 
 # Load tokens from tokens.txt
 with open("tokens.txt", "r") as f:
@@ -19,47 +23,57 @@ CHANNEL_ID = 1340673021530345502  # Replace with your channel ID
 # Logging setup
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-class ChatBot(discord.Client):
+# AI Response Generation Function
+async def generate_ai_response(prompt):
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response["choices"][0]["message"]["content"]
+    except Exception as e:
+        return "Mujhe samajh nahi aya!"
+
+class SelfBot(discord.Client):
     def __init__(self, token):
-        super().__init__(intents=discord.Intents.default())
+        super().__init__(self, intents=discord.Intents.default())
         self.token = token
 
     async def on_ready(self):
-        logging.info(f"{Fore.BLUE}Fetched channel and server data!{Style.RESET_ALL}")
-        logging.info(f"{Fore.GREEN}Success -=> logged in {self.token[:5]}...{Style.RESET_ALL}")
-        await self.start_chat()
+        logging.info(f"{Fore.GREEN}Success -=> logged in {self.token[:5]}...")
+        logging.info(f"{Fore.BLUE}Fetched channel and server data!")
+
+        # Start chatting
+        asyncio.create_task(self.start_chat())
 
     async def on_message(self, message):
         if message.author.bot:
             return  # Ignore bot messages
 
         if message.channel.id == CHANNEL_ID:
-            response = await self.generate_ai_response(message.content)
-            await asyncio.sleep(random.uniform(1, 2))  # Random delay before response
-            await message.channel.send(response)
+            ai_response = await generate_ai_response(message.content)
+            await asyncio.sleep(random.uniform(1.5, 3.0))  # Delay to mimic typing
+            await message.channel.send(ai_response)
 
     async def start_chat(self):
-        logging.info(f"{Fore.MAGENTA}Chatting Started!{Style.RESET_ALL}")
+        await asyncio.sleep(random.randint(5, 15))  # Initial delay
         channel = self.get_channel(CHANNEL_ID)
+
         if channel:
+            logging.info(f"{Fore.MAGENTA}Chatting Started!")
             while True:
-                message = await self.generate_ai_response("Chat something")
-                await channel.send(message)
-                await asyncio.sleep(random.uniform(20, 60))  # Random chat interval
+                ai_message = await generate_ai_response("Say something in Hinglish.")
+                await channel.send(ai_message)
+                await asyncio.sleep(random.uniform(30, 90))  # Random interval between messages
 
-    async def generate_ai_response(self, user_input):
-        """Generate AI response in Hinglish using OpenAI API"""
-        prompt = f"You are an AI chatting in Hinglish (Hindi in English alphabets). Respond naturally.\n\nUser: {user_input}\nAI:"
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "system", "content": prompt}]
-        )
-        return response["choices"][0]["message"]["content"]
+    def run_self_bot(self):
+        self.run(self.token, bot=False)  # Running as a self-bot
 
-# Start multiple bots
-bots = []
+# Start multiple self-bots
 for token in TOKENS:
-    bot = ChatBot(token)
-    asyncio.create_task(bot.start(token))  # Run all bots asynchronously
+    bot = SelfBot(token)
+    asyncio.create_task(bot.run_self_bot())
 
-asyncio.run(asyncio.sleep(999999))  # Keep script running
+# Run event loop
+asyncio.get_event_loop().run_forever()
+
